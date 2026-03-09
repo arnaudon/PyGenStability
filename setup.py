@@ -1,8 +1,9 @@
 """Setup."""
+
 from pybind11.setup_helpers import Pybind11Extension
 from setuptools import find_namespace_packages, setup
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 
 ext_modules = [
     Pybind11Extension(
