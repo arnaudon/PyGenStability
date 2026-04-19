@@ -112,6 +112,9 @@ test/data/
 # pygenstability run artifacts
 results.pkl
 
+# Auto-generated Sphinx PDF (regenerated on release via `tox -e docs`)
+pygenstability_doc.pdf
+
 .DS_Store
 
 # vscode

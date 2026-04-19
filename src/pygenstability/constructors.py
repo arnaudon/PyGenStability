@@ -53,10 +53,13 @@ def _limit_numpy(f):
 
 
 def _compute_spectral_decomp(matrix):
-    """Solve eigenalue problem for symmetric matrix."""
+    """Solve eigenalue problem for symmetric matrix.
+
+    la.eigh returns orthonormal eigenvectors for a Hermitian matrix, so the
+    inverse is exactly the transpose — avoid computing la.inv(v).
+    """
     lambdas, v = la.eigh(matrix.toarray())
-    vinv = la.inv(v)  # TODO: we could take v.T if we know that v is already orthonormal
-    return lambdas, v, vinv
+    return lambdas, v, v.T
 
 
 def _check_total_degree(degrees):
@@ -401,7 +404,8 @@ class constructor_directed(Constructor):
 
         out_degrees = np.array(self.graph.sum(1)).flatten()
         _check_total_degree(out_degrees)
-        dinv = np.divide(1, out_degrees, where=out_degrees != 0)
+        dinv = np.zeros_like(out_degrees, dtype=float)
+        np.divide(1, out_degrees, out=dinv, where=out_degrees != 0)
 
         self.partial_quality_matrix = sp.csr_matrix(
             alpha * np.diag(dinv).dot(self.graph.toarray())
@@ -456,7 +460,8 @@ class constructor_linearized_directed(Constructor):
 
         out_degrees = np.array(self.graph.sum(1)).flatten()
         _check_total_degree(out_degrees)
-        dinv = np.divide(1, out_degrees, where=out_degrees != 0)
+        dinv = np.zeros_like(out_degrees, dtype=float)
+        np.divide(1, out_degrees, out=dinv, where=out_degrees != 0)
 
         if alpha < 1:
             ones = np.ones((n_nodes, n_nodes)) / n_nodes
