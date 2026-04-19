@@ -52,6 +52,7 @@ setup(
     ext_modules=ext_modules,
     setup_requires=["pybind11>=2.10.0"],
     install_requires=install_requires,
+    python_requires=">=3.10",
     zip_safe=False,
     extras_require={
         "plotly": plotly_require,

@@ -124,11 +124,11 @@ def _check_method(method):  # pragma: no cover
         raise Exception("Without Louvain or Leiden solver, we cannot run PyGenStability")
 
     if method == "louvain" and _NO_LOUVAIN:
-        print("Louvain is not available, we fallback to leiden.")
+        L.warning("Louvain is not available, we fallback to leiden.")
         return "leiden"
 
     if method == "leiden" and _NO_LEIDEN:
-        print("Leiden is not available, we fallback to louvain.")
+        L.warning("Leiden is not available, we fallback to louvain.")
         return "louvain"
 
     return method

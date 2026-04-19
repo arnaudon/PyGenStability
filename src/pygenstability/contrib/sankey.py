@@ -1,5 +1,7 @@
 """Sankey diagram plots."""
 
+import logging
+
 import numpy as np  # pragma: no cover
 
 try:
@@ -9,6 +11,8 @@ try:
     with_plotly = True
 except ImportError:  # pragma: no cover
     with_plotly = False
+
+L = logging.getLogger(__name__)
 
 
 def plot_sankey(
@@ -73,7 +77,7 @@ def plot_sankey(
     if with_plotly:
         plot(fig, filename=filename)
     else:
-        print("Plotly not installed, we cannot plot the figure")
+        L.warning("Plotly not installed, we cannot plot the figure")
 
     if live:
         fig.show()
