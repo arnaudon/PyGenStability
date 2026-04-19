@@ -91,7 +91,6 @@ convention = "google"
 force-single-line = true
 
 [tool.ruff.lint.per-file-ignores]
-"**/__init__.py" = ["F401", "F403"]
 "tests/**" = ["D"]
 "docs/**" = ["D"]
 "examples/**" = ["D", "E", "F"]

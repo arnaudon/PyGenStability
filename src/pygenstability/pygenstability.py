@@ -374,11 +374,14 @@ def _process_runs(scale, results, all_results):
 
 def _assign_increasing_ids(community_id):
     """Assign strictly increasing community IDs starting from 0."""
-    # get unique ids and their indices in input array
-    unique_ids, ind = np.unique(community_id, return_index=True)
-    # translate old ids to new ids
-    new_id_dict = {unique_ids[np.argsort(ind)][i]: i for i in range(len(unique_ids))}
-    return np.vectorize(new_id_dict.get)(community_id)
+    community_id = np.asarray(community_id)
+    unique_ids, first_ind, inverse = np.unique(community_id, return_index=True, return_inverse=True)
+    # Build a mapping sorted-unique-index -> label-by-first-appearance. The
+    # inverse permutation of argsort(first_ind) does this in one write without
+    # any Python-level loop.
+    relabel = np.empty(len(unique_ids), dtype=np.intp)
+    relabel[np.argsort(first_ind)] = np.arange(len(unique_ids))
+    return relabel[inverse]
 
 
 @_timing
