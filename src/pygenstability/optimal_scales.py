@@ -1,5 +1,7 @@
 """Detect optimal scales from a scale scan."""
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import as_strided
@@ -48,8 +50,13 @@ def _pool2d_nvi(A, kernel_size, stride, padding=0):
 
 
 def identify_optimal_scales(
-    results, kernel_size=3, window_size=3, max_nvi=1, basin_radius=1, store_basins=False
-):
+    results: dict,
+    kernel_size: int = 3,
+    window_size: int = 3,
+    max_nvi: float = 1,
+    basin_radius: int = 1,
+    store_basins: bool = False,
+) -> dict:
     """Identifies optimal scales in Markov Stability [1]_.
 
     Robust scales are found in a sequential way. We first search for large diagonal blocks

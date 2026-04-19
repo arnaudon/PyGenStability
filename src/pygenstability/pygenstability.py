@@ -12,6 +12,8 @@ Markov Stability setting, and can be parametrised via built-in constructors, or 
 the user via the constructor module.
 """
 
+from __future__ import annotations
+
 import itertools
 import logging
 import multiprocessing
@@ -19,6 +21,9 @@ from collections import defaultdict
 from functools import partial
 from functools import wraps
 from time import time
+from typing import Any
+from typing import Callable
+from typing import Sequence
 
 try:
     import igraph as ig
@@ -136,29 +141,29 @@ def _check_method(method):  # pragma: no cover
 
 @_timing
 def run(
-    graph=None,
-    constructor="linearized",
-    min_scale=-2.0,
-    max_scale=0.5,
-    n_scale=20,
-    log_scale=True,
-    scales=None,
-    n_tries=100,
-    with_all_tries=False,
-    with_NVI=True,
-    n_NVI=20,
-    with_postprocessing=True,
-    with_ttprime=True,
-    with_spectral_gap=False,
-    exp_comp_mode="spectral",
-    result_file="results.pkl",
-    n_workers=4,
-    tqdm_disable=False,
-    with_optimal_scales=True,
-    optimal_scales_kwargs=None,
-    method="louvain",
-    constructor_kwargs=None,
-):
+    graph: Any = None,
+    constructor: str | Callable = "linearized",
+    min_scale: float = -2.0,
+    max_scale: float = 0.5,
+    n_scale: int = 20,
+    log_scale: bool = True,
+    scales: np.ndarray | None = None,
+    n_tries: int = 100,
+    with_all_tries: bool = False,
+    with_NVI: bool = True,
+    n_NVI: int = 20,
+    with_postprocessing: bool = True,
+    with_ttprime: bool = True,
+    with_spectral_gap: bool = False,
+    exp_comp_mode: str = "spectral",
+    result_file: str = "results.pkl",
+    n_workers: int = 4,
+    tqdm_disable: bool = False,
+    with_optimal_scales: bool = True,
+    optimal_scales_kwargs: dict | None = None,
+    method: str = "louvain",
+    constructor_kwargs: dict | None = None,
+) -> dict:
     """This is the main function to compute graph clustering across scales with Markov Stability.
 
     This function needs a graph object  as an adjacency matrix encoded with scipy.csgraph.
@@ -329,7 +334,7 @@ def _compute_NVI(communities, all_results, pool, n_partitions=10):
     all_results["NVI"].append(nvi_mean)
 
 
-def evaluate_NVI(index_pair, partitions):
+def evaluate_NVI(index_pair: Sequence[int], partitions: Sequence) -> float:
     r"""Evaluations of Normalized Variation of Information (NVI).
 
     NVI is defined for two partitions :math:`p_0` and :math:`p_1` as:
