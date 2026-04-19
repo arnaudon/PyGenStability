@@ -176,13 +176,12 @@ class DataClustering(_GraphConstruction):
         """Return labels for robust paritions."""
         labels = []
 
-        assert (
-            "selected_partitions" in self.results_.keys()
-        ), "Run PyGenStability with optimal scale selection first."
+        assert "selected_partitions" in self.results_.keys(), (
+            "Run PyGenStability with optimal scale selection first."
+        )
 
         # store labels of robust partitions
         for i in self.results_["selected_partitions"]:
-
             # only return non-trivial robust partitions
             robust_partition = self.results_["community_id"][i]
             if not np.allclose(robust_partition, np.zeros(self.adjacency_.shape[0])):

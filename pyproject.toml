@@ -1,3 +1,39 @@
 [build-system]
 requires = ["setuptools", "numpy", "cython", "pybind11>=2.6.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "D",    # pydocstyle
+    "PLE",  # pylint errors
+]
+ignore = [
+    "E731",  # do not assign a lambda expression
+    "E741",  # ambiguous variable name
+    "E203",  # whitespace before ':' (black-compatible)
+    "W605",  # invalid escape sequence
+    "D102",  # missing docstring in public method
+    "D105",  # missing docstring in magic method
+    "D107",  # missing docstring in __init__
+    "D416",  # section name should end with a colon (numpy-style headers used)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "F403"]
+"tests/**" = ["D"]
+"docs/**" = ["D"]
+"examples/**" = ["D", "E", "F"]

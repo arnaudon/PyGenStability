@@ -391,9 +391,9 @@ class constructor_directed(Constructor):
     @_limit_numpy
     def prepare(self, **kwargs):
         """Prepare the constructor with non-scale dependent computations."""
-        assert (
-            self.exp_comp_mode == "expm"
-        ), 'exp_comp_mode="expm" is required for "constructor_directed"'
+        assert self.exp_comp_mode == "expm", (
+            'exp_comp_mode="expm" is required for "constructor_directed"'
+        )
 
         alpha = kwargs.get("alpha", 0.8)
         n_nodes = self.graph.shape[0]
