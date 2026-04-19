@@ -109,6 +109,9 @@ test/model/
 
 test/data/
 
+# pygenstability run artifacts
+results.pkl
+
 .DS_Store
 
 # vscode
