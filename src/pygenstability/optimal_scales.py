@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import as_strided
@@ -45,8 +47,11 @@ def _pool2d_nvi(A, kernel_size, stride, padding=0):
     )
     A_w = as_strided(A, shape_w, strides_w)
 
-    # Return the result of pooling
-    return np.nanmean(A_w, axis=(2, 3))
+    # Return the result of pooling. Windows that fall entirely on the NaN padding
+    # legitimately have no values to average; silence the expected warning.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning, message="Mean of empty slice")
+        return np.nanmean(A_w, axis=(2, 3))
 
 
 def identify_optimal_scales(

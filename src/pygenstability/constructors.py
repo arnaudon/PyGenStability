@@ -306,14 +306,18 @@ class constructor_signed_modularity(Constructor):
         deg_neg = adj_neg.sum(1).flatten()
 
         deg_norm = deg_plus.sum() + deg_neg.sum()
-        self.partial_null_model = np.array(
-            [
-                deg_plus / deg_norm,
-                deg_plus / deg_plus.sum(),
-                -deg_neg / deg_neg.sum(),
-                deg_neg / deg_norm,
-            ]
-        )
+        # For a purely-positive (or purely-negative) graph one of the per-sign
+        # sums is zero. The resulting NaN column is tolerated downstream; silence
+        # the warning so it doesn't swamp the user.
+        with np.errstate(invalid="ignore"):
+            self.partial_null_model = np.array(
+                [
+                    deg_plus / deg_norm,
+                    deg_plus / deg_plus.sum(),
+                    -deg_neg / deg_neg.sum(),
+                    deg_neg / deg_norm,
+                ]
+            )
         self.partial_quality_matrix = self.graph / deg_norm
 
     @_limit_numpy
