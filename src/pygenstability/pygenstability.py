@@ -228,10 +228,7 @@ def run(
         log_scale=log_scale,
         scales=scales,
     )
-    assert exp_comp_mode in ["spectral", "expm"]
-    if constructor in ("directed", "linearized_directed", "signed"):
-        L.info("We cannot use spectral exponential computation for directed contructor")
-        exp_comp_mode = "expm"
+    exp_comp_mode = _resolve_exp_comp_mode(exp_comp_mode, constructor)
 
     if constructor_kwargs is None:
         constructor_kwargs = {}
@@ -245,50 +242,117 @@ def run(
         constructor_data = _get_constructor_data(
             constructor, scales, pool, tqdm_disable=tqdm_disable
         )
-        if method == "leiden":
-            # pragma: no cover
+        if method == "leiden":  # pragma: no cover
             for data in constructor_data:
                 assert all(data["null_model"][0] == data["null_model"][1])
 
         L.info("Optimise stability...")
-        all_results = defaultdict(list)
-        all_results["run_params"] = run_params
+        all_results = _scan_scales(
+            constructor_data,
+            scales,
+            pool,
+            n_tries=n_tries,
+            method=method,
+            with_NVI=with_NVI,
+            n_NVI=n_NVI,
+            with_all_tries=with_all_tries,
+            result_file=result_file,
+            tqdm_disable=tqdm_disable,
+            n_scale=n_scale,
+            run_params=run_params,
+        )
 
-        # iterate through all Markov scales
-        for i, t in tqdm(enumerate(scales), total=n_scale, disable=tqdm_disable):
-            # run optimisation independently for n_tries
-            results = _run_optimisations(constructor_data[i], n_tries, pool, method)
-            communities = _process_runs(t, results, all_results)
-
-            if with_NVI:
-                _compute_NVI(communities, all_results, pool, n_partitions=min(n_NVI, n_tries))
-
-            if with_all_tries:
-                all_results["all_tries"].append(results)
-
-            save_results(all_results, filename=result_file)
-
-        if with_postprocessing:
-            L.info("Apply postprocessing...")
-            _apply_postprocessing(all_results, pool, constructor_data, tqdm_disable, method=method)
-
-        if with_ttprime or with_optimal_scales:
-            L.info("Compute ttprimes...")
-            _compute_ttprime(all_results, pool)
-
-            if with_optimal_scales:
-                L.info("Identify optimal scales...")
-                if optimal_scales_kwargs is None:
-                    optimal_scales_kwargs = {
-                        "kernel_size": max(2, int(0.1 * n_scale)),
-                        "window_size": max(2, int(0.1 * n_scale)),
-                        "basin_radius": max(1, int(0.01 * n_scale)),
-                    }
-                all_results = identify_optimal_scales(all_results, **optimal_scales_kwargs)
+        all_results = _finalize_results(
+            all_results,
+            pool,
+            constructor_data,
+            method=method,
+            tqdm_disable=tqdm_disable,
+            with_postprocessing=with_postprocessing,
+            with_ttprime=with_ttprime,
+            with_optimal_scales=with_optimal_scales,
+            optimal_scales_kwargs=optimal_scales_kwargs,
+            n_scale=n_scale,
+        )
 
     save_results(all_results, filename=result_file)
-
     return dict(all_results)
+
+
+def _resolve_exp_comp_mode(exp_comp_mode: str, constructor) -> str:
+    """Validate exp_comp_mode and force expm for directed/signed constructors."""
+    assert exp_comp_mode in ["spectral", "expm"]
+    if constructor in ("directed", "linearized_directed", "signed"):
+        L.info("We cannot use spectral exponential computation for directed contructor")
+        return "expm"
+    return exp_comp_mode
+
+
+def _scan_scales(
+    constructor_data,
+    scales,
+    pool,
+    *,
+    n_tries: int,
+    method: str,
+    with_NVI: bool,
+    n_NVI: int,
+    with_all_tries: bool,
+    result_file: str,
+    tqdm_disable: bool,
+    n_scale: int,
+    run_params: dict,
+) -> defaultdict:
+    """Run the per-scale optimisation loop and aggregate results."""
+    all_results: defaultdict = defaultdict(list)
+    all_results["run_params"] = run_params
+
+    for i, t in tqdm(enumerate(scales), total=n_scale, disable=tqdm_disable):
+        results = _run_optimisations(constructor_data[i], n_tries, pool, method)
+        communities = _process_runs(t, results, all_results)
+
+        if with_NVI:
+            _compute_NVI(communities, all_results, pool, n_partitions=min(n_NVI, n_tries))
+
+        if with_all_tries:
+            all_results["all_tries"].append(results)
+
+        save_results(all_results, filename=result_file)
+    return all_results
+
+
+def _finalize_results(
+    all_results,
+    pool,
+    constructor_data,
+    *,
+    method: str,
+    tqdm_disable: bool,
+    with_postprocessing: bool,
+    with_ttprime: bool,
+    with_optimal_scales: bool,
+    optimal_scales_kwargs: dict | None,
+    n_scale: int,
+):
+    """Apply postprocessing, ttprime, and optimal-scale selection."""
+    if with_postprocessing:
+        L.info("Apply postprocessing...")
+        _apply_postprocessing(all_results, pool, constructor_data, tqdm_disable, method=method)
+
+    if with_ttprime or with_optimal_scales:
+        L.info("Compute ttprimes...")
+        _compute_ttprime(all_results, pool)
+
+        if with_optimal_scales:
+            L.info("Identify optimal scales...")
+            if optimal_scales_kwargs is None:
+                optimal_scales_kwargs = {
+                    "kernel_size": max(2, int(0.1 * n_scale)),
+                    "window_size": max(2, int(0.1 * n_scale)),
+                    "basin_radius": max(1, int(0.01 * n_scale)),
+                }
+            all_results = identify_optimal_scales(all_results, **optimal_scales_kwargs)
+    return all_results
 
 
 def _process_runs(scale, results, all_results):
