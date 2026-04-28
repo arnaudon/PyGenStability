@@ -1,3 +1,4 @@
 [submodule "generalizedLouvain"]
 	path = generalizedLouvain
-	url = https://github.com/michaelschaub/generalizedLouvain
+	url = https://github.com/arnaudon/generalizedLouvain
+	branch = fix_rng

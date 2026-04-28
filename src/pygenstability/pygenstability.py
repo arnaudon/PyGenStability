@@ -445,7 +445,7 @@ def _to_indices(matrix, directed=False):
 
 
 @_timing
-def _optimise(_, quality_indices, quality_values, null_model, global_shift, method="louvain"):
+def _optimise(try_idx, seed, quality_indices, quality_values, null_model, global_shift, method="louvain"):
     """Worker for generalized Markov Stability optimisation runs."""
     if method == "louvain":
         stability, community_id = generalized_louvain.run_louvain(
@@ -456,7 +456,7 @@ def _optimise(_, quality_indices, quality_values, null_model, global_shift, meth
             null_model,
             np.shape(null_model)[0],
             1.0,
-            np.random.randint(1e8),
+            seed,
         )
 
     if method == "leiden":
@@ -476,7 +476,7 @@ def _optimise(_, quality_indices, quality_values, null_model, global_shift, meth
                 )
             )
         optimiser = leidenalg.Optimiser()
-        optimiser.set_rng_seed(np.random.randint(1e8))
+        optimiser.set_rng_seed(int(seed))
         # we initialise stability
         stability = sum(partition.quality() for partition in partitions) / n_null
         # we use Leiden to find optimal partition and update stability according to improvement
@@ -544,8 +544,11 @@ def _run_optimisations(constructor, n_runs, pool, method="louvain"):
         method=method,
     )
 
+    # Pre-generate per-try seeds in the parent process so workers cannot
+    # observe non-deterministic ordering through the global RNG state.
+    seeds = np.random.randint(0, int(1e8), size=n_runs).tolist()
     chunksize = _get_chunksize(n_runs, pool)
-    return pool.map(worker, range(n_runs), chunksize=chunksize)
+    return pool.starmap(worker, zip(range(n_runs), seeds), chunksize=chunksize)
 
 
 @_timing

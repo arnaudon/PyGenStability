@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import yaml
+from dictdiffer import diff
 from numpy.testing import assert_almost_equal
 
 from pygenstability import pygenstability as pgs
@@ -50,9 +51,7 @@ def test_run(graph, graph_non_connected, graph_directed, graph_signed):
     results = _to_list(results)
     #yaml.dump(results, open(DATA / "test_run_default.yaml", "w"))
     expected_results = yaml.safe_load(open(DATA / "test_run_default.yaml", "r"))
-    # TODO: unstable C++ Louvain RNG produces non-reproducible outputs across runs.
-    # Re-enable exact comparison once the RNG is made deterministic.
-    assert set(expected_results) == set(results)
+    assert len(list(diff(expected_results, results, tolerance=1e-5))) == 0
 
     results = pgs.run(
         graph,
@@ -66,7 +65,7 @@ def test_run(graph, graph_non_connected, graph_directed, graph_signed):
     results = _to_list(results)
     #yaml.dump(results, open(DATA / "test_run_gap.yaml", "w"))
     expected_results = yaml.safe_load(open(DATA / "test_run_gap.yaml", "r"))
-    assert set(expected_results) == set(results)
+    assert len(list(diff(expected_results, results, tolerance=1e-5))) == 0
 
     results = pgs.run(
         graph,
@@ -83,13 +82,13 @@ def test_run(graph, graph_non_connected, graph_directed, graph_signed):
     results = _to_list(results)
     #yaml.dump(results, open(DATA / "test_run_minimal.yaml", "w"))
     expected_results = yaml.safe_load(open(DATA / "test_run_minimal.yaml", "r"))
-    assert set(expected_results) == set(results)
+    assert len(list(diff(expected_results, results))) == 0
 
     results = pgs.run(graph, scales=[0.1, 0.5, 1.0], log_scale=False, with_optimal_scales=False, n_tries=10,n_workers=1)
     results = _to_list(results)
-    yaml.dump(results, open(DATA / "test_run_times.yaml", "w"))
+    #yaml.dump(results, open(DATA / "test_run_times.yaml", "w"))
     expected_results = yaml.safe_load(open(DATA / "test_run_times.yaml", "r"))
-    assert set(expected_results) == set(results)
+    assert len(list(diff(expected_results, results))) == 0
 
     # test leiden method
     constructor = load_constructor("continuous_combinatorial", graph)
@@ -104,7 +103,7 @@ def test_run(graph, graph_non_connected, graph_directed, graph_signed):
     results = _to_list(results)
     #yaml.dump(results, open(DATA / "test_run_default_leiden.yaml", "w"))
     expected_results = yaml.safe_load(open(DATA / "test_run_default_leiden.yaml", "r"))
-    assert set(expected_results) == set(results)
+    assert len(list(diff(expected_results, results))) == 0
 
 
 def test__get_scales():
@@ -124,13 +123,13 @@ def test__optimise(graph):
     data = constructor.get_data(1)
     quality_indices, quality_values = pgs._to_indices(data["quality"])
     stability, community_id = pgs._optimise(
-        0, quality_indices, quality_values, data["null_model"], 0
+        0, 42, quality_indices, quality_values, data["null_model"], 0
     )
     assert_almost_equal(stability, 0.5590341906608186)
     assert community_id == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 
     stability, community_id = pgs._optimise(
-        0, quality_indices, quality_values, data["null_model"], 0, method="leiden"
+        0, 42, quality_indices, quality_values, data["null_model"], 0, method="leiden"
     )
     assert_almost_equal(stability, 0.36540825919902664)
     assert community_id == [
